@@ -10,7 +10,7 @@ func init() {
 }
 
 func JSON(input ...interface{}) {
-	for item := range input {
+	for _, item := range input {
 		data, err := json.MarshalIndent(item, "", "  ")
 		if err != nil {
 			continue
@@ -31,6 +31,13 @@ func Printf(format string, v ...interface{}) {
 	log.Printf(format, v...)
 }
 
-func Panic(v ...interface{}) {
+func Fatal(v ...interface{}) {
 	log.Fatal(v...)
+}
+
+func Crash(err error) {
+	if err == nil {
+		return
+	}
+	Fatal(err)
 }
