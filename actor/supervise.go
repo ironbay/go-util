@@ -2,7 +2,29 @@ package actor
 
 import "log"
 
-func Supervise(task func() error) error {
+type Session struct {
+	Stop chan error
+
+	cleanup []func()
+}
+
+func NewSession() *Session {
+	return &Session{
+		Stop: make(chan error, 1),
+	}
+}
+
+func (this *Session) Cleanup(cb func()) {
+	this.cleanup = append(this.cleanup, cb)
+}
+
+func (this *Session) clean() {
+	for _, cb := range this.cleanup {
+		cb()
+	}
+}
+
+func Supervise(task func(*Session)) error {
 	for {
 		err := do(task)
 		if err == nil {
@@ -15,13 +37,16 @@ func Supervise(task func() error) error {
 	}
 }
 
-func do(task func() error) (err error) {
+func do(task func(*Session)) (err error) {
+	session := NewSession()
+	defer session.clean()
 	defer func() {
 		if r := recover(); r != nil {
 			err = r.(error)
 		}
 	}()
-	return task()
+	go task(session)
+	return <-session.Stop
 }
 
 type ActorError struct {
