@@ -49,12 +49,15 @@ func do(task func(*Session)) (err error) {
 		},
 	}
 	defer session.clean()
-	defer func() {
-		if r := recover(); r != nil {
-			err = r.(error)
-		}
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				err = r.(error)
+				session.Stop(err)
+			}
+		}()
+		task(session)
 	}()
-	go task(session)
 	return <-stop
 }
 
