@@ -10,7 +10,7 @@ func init() {
 }
 
 func JSON(input ...interface{}) {
-	for item := range input {
+	for _, item := range input {
 		data, err := json.MarshalIndent(item, "", "  ")
 		if err != nil {
 			continue
