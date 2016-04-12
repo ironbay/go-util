@@ -31,6 +31,13 @@ func Printf(format string, v ...interface{}) {
 	log.Printf(format, v...)
 }
 
-func Panic(v ...interface{}) {
+func Fatal(v ...interface{}) {
 	log.Fatal(v...)
+}
+
+func Crash(err error) {
+	if err == nil {
+		return
+	}
+	Fatal(err)
 }
