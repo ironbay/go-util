@@ -1,17 +1,14 @@
 package actor
 
-import "log"
+import (
+	"log"
+	"sync"
+)
 
 type Session struct {
-	Stop chan error
+	Stop func(err error)
 
 	cleanup []func()
-}
-
-func NewSession() *Session {
-	return &Session{
-		Stop: make(chan error, 1),
-	}
 }
 
 func (this *Session) Cleanup(cb func()) {
@@ -38,7 +35,15 @@ func Supervise(task func(*Session)) error {
 }
 
 func do(task func(*Session)) (err error) {
-	session := NewSession()
+	stop := make(chan error)
+	once := sync.Once{}
+	session := &Session{
+		Stop: func(err error) {
+			once.Do(func() {
+				stop <- err
+			})
+		},
+	}
 	defer session.clean()
 	defer func() {
 		if r := recover(); r != nil {
@@ -46,7 +51,7 @@ func do(task func(*Session)) (err error) {
 		}
 	}()
 	go task(session)
-	return <-session.Stop
+	return <-stop
 }
 
 type ActorError struct {
