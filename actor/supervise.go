@@ -3,6 +3,7 @@ package actor
 import (
 	"log"
 	"sync"
+	"time"
 )
 
 type Session struct {
@@ -21,7 +22,7 @@ func (this *Session) clean() {
 	}
 }
 
-func Supervise(task func(*Session)) error {
+func Supervise(task func(*Session), strategies ...func()) error {
 	for {
 		err := do(task)
 		if err == nil {
@@ -30,7 +31,10 @@ func Supervise(task func(*Session)) error {
 		if ae, ok := err.(*ActorError); ok {
 			return ae
 		}
-		log.Println("Restarting")
+		log.Println("Restarting:", err)
+		for _, s := range strategies {
+			s()
+		}
 	}
 }
 
@@ -65,5 +69,11 @@ func (*ActorError) Error() string {
 func Error(message string) *ActorError {
 	return &ActorError{
 		message,
+	}
+}
+
+func SleepStrategy(seconds int) func() {
+	return func() {
+		time.Sleep(time.Duration(seconds) * time.Second)
 	}
 }
