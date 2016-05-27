@@ -31,10 +31,10 @@ func Supervise(task func(*Session), strategies ...func()) error {
 		if ae, ok := err.(*ActorError); ok {
 			return ae
 		}
-		log.Println("Restarting:", err)
 		for _, s := range strategies {
 			s()
 		}
+		log.Println("Restarting:", err)
 	}
 }
 
@@ -44,6 +44,7 @@ func do(task func(*Session)) (err error) {
 	session := &Session{
 		Stop: func(err error) {
 			once.Do(func() {
+				log.Println("Killing")
 				stop <- err
 			})
 		},
